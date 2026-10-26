@@ -620,3 +620,26 @@ func TestConvHeaders(t *testing.T) {
 		})
 	}
 }
+
+func TestUnixEndpointTarget(t *testing.T) {
+	for _, target := range []string{"unix:///otel.sock", "unix-abstract:///otel.sock"} {
+		for _, key := range []string{
+			"OTEL_EXPORTER_OTLP_ENDPOINT",
+			"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+		} {
+			t.Run(target+"/"+key, func(t *testing.T) {
+				t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+				t.Setenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "")
+				t.Setenv(key, target)
+				cfg := newConfig(nil)
+				assert.Equal(t, target, cfg.endpoint.Value)
+				assert.True(t, cfg.insecure.Value)
+			})
+		}
+		t.Run(target+"/WithEndpointURL", func(t *testing.T) {
+			cfg := newConfig([]Option{WithEndpointURL(target)})
+			assert.Equal(t, target, cfg.endpoint.Value)
+			assert.True(t, cfg.insecure.Value)
+		})
+	}
+}
